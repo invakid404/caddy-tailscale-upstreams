@@ -2,6 +2,7 @@ package caddy_tailscale_upstreams
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 )
@@ -17,6 +18,23 @@ func (m *Module) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		for nesting := d.Nesting(); d.NextBlock(nesting); {
 			key := d.Val()
 			switch key {
+			case "port":
+				if !d.NextArg() {
+					return d.ArgErr()
+				}
+
+				rawValue := d.Val()
+				parsedValue, err := strconv.ParseUint(rawValue, 10, 16)
+				if err != nil || parsedValue < 0 || parsedValue > 65535 {
+					return d.Errf("invalid port '%s'", rawValue)
+				}
+
+				m.Port = uint16(parsedValue)
+
+				// Ensure no extra args after the port value
+				if d.NextArg() {
+					return d.ArgErr()
+				}
 			case "tag":
 				if !d.NextArg() {
 					return d.ArgErr()

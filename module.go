@@ -17,8 +17,10 @@ func init() {
 }
 
 type Module struct {
+	Port      uint16 `json:"port,omitempty"`
 	TargetTag string `json:"tag,omitempty"`
-	client    *tailscale.Client
+
+	client *tailscale.Client
 
 	upstreams   []*reverseproxy.Upstream
 	upstreamsMu sync.RWMutex
@@ -78,9 +80,11 @@ func (m *Module) fetchUpstreams(ctx caddy.Context) error {
 	var upstreams []*reverseproxy.Upstream
 	for _, peer := range peers {
 		ip := peer.TailscaleIPs[0]
+		dial := fmt.Sprintf("%s:%d", ip.String(), m.Port)
+		ctx.Logger().Debug("found upstream", zap.String("ip", ip.String()), zap.String("dial", dial))
 
 		upstream := reverseproxy.Upstream{
-			Dial: ip.String(),
+			Dial: dial,
 		}
 		upstreams = append(upstreams, &upstream)
 	}
